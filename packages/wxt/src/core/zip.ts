@@ -47,7 +47,9 @@ export async function zip(config?: InlineConfig): Promise<string[]> {
 
   const outZipFilename = applyTemplate(wxt.config.zip.artifactTemplate);
   const outZipPath = path.resolve(wxt.config.outBaseDir, outZipFilename);
-  await zipDir(wxt.config.outDir, outZipPath);
+  await zipDir(wxt.config.outDir, outZipPath, {
+    exclude: wxt.config.zip.exclude,
+  });
   zipFiles.push(outZipPath);
 
   // ZIP sources for Firefox
@@ -99,13 +101,11 @@ async function zipDir(
 ): Promise<void> {
   const archive = new JSZip();
   const files = (
-    await glob('**/*', {
+    await glob(['**/*', ...(options?.include || [])], {
       cwd: directory,
       // Ignore node_modules, otherwise this glob step takes forever
       ignore: ['**/node_modules'],
       onlyFiles: true,
-      // TODO: Fix #738
-      // dot: true,
     })
   ).filter((relativePath) => {
     return (
